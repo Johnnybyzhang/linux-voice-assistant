@@ -17,7 +17,7 @@ from .models import AvailableWakeWord, Preferences, ServerState, WakeWordType
 from .mpv_player import MpvMediaPlayer
 from .openwakeword import OpenWakeWord, OpenWakeWordFeatures
 from .satellite import VoiceSatelliteProtocol
-from .util import get_mac, is_arm
+from .util import get_mac, is_arm, is_arm64, is_armhf
 from .zeroconf import HomeAssistantZeroconf
 
 _LOGGER = logging.getLogger(__name__)
@@ -27,7 +27,9 @@ _WAKEWORDS_DIR = _REPO_DIR / "wakewords"
 _OWW_DIR = _WAKEWORDS_DIR / "openWakeWord"
 _SOUNDS_DIR = _REPO_DIR / "sounds"
 
-if is_arm():
+if is_armhf():
+    _LIB_DIR = _REPO_DIR / "lib" / "linux_armhf"
+elif is_arm64():
     _LIB_DIR = _REPO_DIR / "lib" / "linux_arm64"
 else:
     _LIB_DIR = _REPO_DIR / "lib" / "linux_amd64"

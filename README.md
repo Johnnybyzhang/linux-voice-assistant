@@ -2,8 +2,10 @@
 
 Experimental Linux voice assistant for [Home Assistant][homeassistant] that uses the [ESPHome][esphome] protocol.
 
-Runs on Linux `aarch64` and `x86_64` platforms. Tested with Python 3.13 and Python 3.11.
+Runs on Linux `aarch64`, `x86_64`, and `armhf` (32-bit ARM) platforms. Tested with Python 3.13 and Python 3.11 on `aarch64` and `x86_64`.
 Supports announcments, start/continue conversation, and timers.
+
+**Note for armhf users:** The TensorFlow Lite C library for 32-bit ARM is included in `lib/linux_armhf/`. If you need to rebuild it, see `lib/linux_armhf/README.md` for build instructions.
 
 ## Installation
 
