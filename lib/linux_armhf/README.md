@@ -1,12 +1,14 @@
 # TensorFlow Lite C Library for ARMhf (32-bit ARM)
 
-This directory should contain the TensorFlow Lite C library compiled for 32-bit ARM (armhf/armv7l) architecture.
+This directory contains the TensorFlow Lite C library compiled for 32-bit ARM (armhf/armv7l) architecture.
 
-## Required File
+## Included File
 
-- `libtensorflowlite_c.so` - TensorFlow Lite C API shared library for armhf
+- `libtensorflowlite_c.so` - TensorFlow Lite C API shared library for armhf (pre-built)
 
-## How to Build
+The library is already included and ready to use. The build instructions below are provided for reference in case you need to rebuild the library.
+
+## How to Build (Reference)
 
 ### Prerequisites
 
