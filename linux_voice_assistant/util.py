@@ -24,11 +24,12 @@ def is_arm() -> bool:
 
 def is_armhf() -> bool:
     """Check if running on 32-bit ARM (armhf/armv7l/armv6l)."""
-    machine = platform.machine()
-    return machine in ("armv7l", "armv6l", "armhf")
+    machine = platform.machine().lower()
+    # Check for 32-bit ARM: armv6, armv7, armv8 (32-bit), but not aarch64
+    return ("arm" in machine or machine.startswith("armhf")) and "aarch64" not in machine and "arm64" not in machine
 
 
 def is_arm64() -> bool:
     """Check if running on 64-bit ARM (aarch64/arm64)."""
-    machine = platform.machine()
-    return machine in ("aarch64", "arm64")
+    machine = platform.machine().lower()
+    return "aarch64" in machine or "arm64" in machine
