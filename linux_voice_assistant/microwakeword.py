@@ -105,10 +105,14 @@ class MicroWakeWord(TfLiteWakeWord):
             return False
 
         # Allocate and quantize input data
-        quant_features = np.round(
-            np.concatenate(self._features, axis=1) / self.input_scale
-            + self.input_zero_point
-        ).astype(np.uint8)
+        concatenated = np.concatenate(self._features, axis=1).astype(np.float32)
+
+        if not np.isfinite(self.input_scale) or self.input_scale == 0:
+            raise RuntimeError("Invalid input scale: cannot quantize features")
+
+        quantized = concatenated / self.input_scale + self.input_zero_point
+        quantized = np.nan_to_num(quantized, nan=0.0, posinf=255.0, neginf=0.0)
+        quant_features = np.clip(np.round(quantized), 0, 255).astype(np.uint8)
 
         # Stride instead of rolling
         self._features.clear()
