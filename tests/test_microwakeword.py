@@ -4,13 +4,15 @@ import wave
 from pathlib import Path
 
 from linux_voice_assistant.microwakeword import MicroWakeWord, MicroWakeWordFeatures
-from linux_voice_assistant.util import is_arm
+from linux_voice_assistant.util import is_arm64, is_armhf
 
 _TESTS_DIR = Path(__file__).parent
 _REPO_DIR = _TESTS_DIR.parent
 _MICRO_DIR = _REPO_DIR / "wakewords"
 
-if is_arm():
+if is_armhf():
+    _LIB_DIR = _REPO_DIR / "lib" / "linux_armhf"
+elif is_arm64():
     _LIB_DIR = _REPO_DIR / "lib" / "linux_arm64"
 else:
     _LIB_DIR = _REPO_DIR / "lib" / "linux_amd64"
