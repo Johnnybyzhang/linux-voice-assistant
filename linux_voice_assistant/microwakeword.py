@@ -1,5 +1,6 @@
 import ctypes
 import json
+import logging
 import statistics
 from collections import deque
 from collections.abc import Iterable
@@ -18,6 +19,7 @@ BYTES_PER_CHUNK = SAMPLES_PER_CHUNK * BYTES_PER_SAMPLE
 SECONDS_PER_CHUNK = SAMPLES_PER_CHUNK / SAMPLES_PER_SECOND
 STRIDE = 3
 
+_LOGGER = logging.getLogger(__name__)
 
 class MicroWakeWord(TfLiteWakeWord):
     def __init__(
@@ -114,6 +116,14 @@ class MicroWakeWord(TfLiteWakeWord):
         quantized = np.nan_to_num(quantized, nan=0.0, posinf=255.0, neginf=0.0)
         quant_features = np.clip(np.round(quantized), 0, 255).astype(np.uint8)
 
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(
+                "[%s] quant features mean=%.4f std=%.4f",
+                self.id,
+                quant_features.mean(),
+                quant_features.std(),
+            )
+
         # Stride instead of rolling
         self._features.clear()
 
@@ -140,7 +150,16 @@ class MicroWakeWord(TfLiteWakeWord):
             output_data.astype(np.float32) - self.output_zero_point
         ) * self.output_scale
 
-        self._probabilities.append(result.item())
+        probability = result.item()
+        self._probabilities.append(probability)
+
+        if _LOGGER.isEnabledFor(logging.DEBUG):
+            _LOGGER.debug(
+                "[%s] inference output=%.4f mean_window=%.4f", 
+                self.id,
+                probability,
+                statistics.mean(self._probabilities),
+            )
 
         if len(self._probabilities) < self.sliding_window_size:
             # Not enough probabilities
@@ -185,9 +204,21 @@ class MicroWakeWordFeatures(TfLiteWakeWord):
                 # Not enough audio for a full window
                 continue
 
-            yield np.array(frontend_result.features).reshape(
-                (1, 1, len(frontend_result.features))
-            )
+            features = np.array(frontend_result.features, dtype=np.float32)
+
+            if _LOGGER.isEnabledFor(logging.DEBUG):
+                chunk_samples = np.frombuffer(chunk_bytes, dtype=np.int16)
+                rms = np.sqrt(
+                    np.mean(chunk_samples.astype(np.float32) ** 2)
+                ) if chunk_samples.size else 0.0
+                _LOGGER.debug(
+                    "Micro frontend window rms=%.2f mean=%.4f std=%.4f", 
+                    rms,
+                    features.mean(),
+                    features.std(),
+                )
+
+            yield features.reshape((1, 1, features.shape[0]))
 
         # Remove processed audio
         self._audio_buffer = self._audio_buffer[audio_buffer_idx:]
