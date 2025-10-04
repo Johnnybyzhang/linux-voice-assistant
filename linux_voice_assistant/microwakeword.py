@@ -68,8 +68,19 @@ class MicroWakeWord(TfLiteWakeWord):
         input_q = self.lib.TfLiteTensorQuantizationParams(self.input_tensor)
         output_q = self.lib.TfLiteTensorQuantizationParams(self.output_tensor)
 
-        self.input_scale, self.input_zero_point = input_q.scale, input_q.zero_point
-        self.output_scale, self.output_zero_point = output_q.scale, output_q.zero_point
+        self.input_scale = float(input_q.scale)
+        self.input_zero_point = int(input_q.zero_point)
+        self.output_scale = float(output_q.scale)
+        self.output_zero_point = int(output_q.zero_point)
+
+        # Cache input tensor type specifics for quantization
+        input_type = int(self.lib.TfLiteTensorType(self.input_tensor))
+        type_ranges = {
+            9: (np.int8, -128, 127),  # kTfLiteInt8
+            1: (np.uint8, 0, 255),    # kTfLiteUInt8
+        }
+        dtype_info = type_ranges.get(input_type, (np.uint8, 0, 255))
+        self.input_dtype, self.input_min, self.input_max = dtype_info
 
     @staticmethod
     def from_config(
@@ -113,8 +124,15 @@ class MicroWakeWord(TfLiteWakeWord):
             raise RuntimeError("Invalid input scale: cannot quantize features")
 
         quantized = concatenated / self.input_scale + self.input_zero_point
-        quantized = np.nan_to_num(quantized, nan=0.0, posinf=255.0, neginf=0.0)
-        quant_features = np.clip(np.round(quantized), 0, 255).astype(np.uint8)
+        quantized = np.nan_to_num(
+            quantized,
+            nan=self.input_zero_point,
+            posinf=self.input_max,
+            neginf=self.input_min,
+        )
+        quant_features = np.clip(np.round(quantized), self.input_min, self.input_max).astype(
+            self.input_dtype
+        )
 
         if _LOGGER.isEnabledFor(logging.DEBUG):
             _LOGGER.debug(
